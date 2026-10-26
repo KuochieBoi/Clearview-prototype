@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clearview – prototype</title>
+<style>
+:root{--ink:#14211f;--kauri:#0f3d3a;--mint:#c4e8d9;--paper:#f4f7f6;--card:#fff;--amber:#f2b94b;--amberbg:#fff4d9;--muted:#5d6e6b;--line:#dbe4e1;--up:#17794f}
+*{box-sizing:border-box;margin:0}
+body{font-family:"Avenir Next","Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#dfe6e4;color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.phone{width:390px;height:780px;max-width:100%;background:var(--paper);border-radius:34px;border:8px solid #1b2a28;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.screens{flex:1;overflow-y:auto;position:relative}
+.screen{display:none;padding:22px 18px 24px}.screen.on{display:block}
+h1{font-size:15px;font-weight:600;color:var(--muted);margin-bottom:4px}
+h2{font-size:19px;margin:20px 0 10px}
+.total{font-size:38px;font-weight:700;letter-spacing:-1px;color:var(--kauri)}
+.sub{font-size:13px;color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin-top:12px;width:100%;text-align:left;font:inherit;color:inherit;display:block;cursor:pointer}
+.card.static{cursor:default}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.name{font-weight:600}.amt{font-weight:700}
+.up{color:var(--up);font-weight:600;font-size:14px}
+.bar{display:flex;height:16px;border-radius:8px;overflow:hidden;margin:12px 0 8px}
+.bar i{display:block}.g{background:var(--kauri)}.f{background:#5fae94}.c{background:var(--mint)}
+.legend{display:flex;gap:12px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.legend b{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px}
+.term{background:none;border:0;border-bottom:2px dotted var(--kauri);font:inherit;font-weight:700;font-size:17px;color:var(--ink);cursor:pointer;padding:0}
+.btn{background:var(--kauri);color:#fff;border:0;border-radius:12px;padding:12px 16px;font:inherit;font-weight:600;cursor:pointer;width:100%;margin-top:12px}
+.btn.alt{background:#fff;color:var(--kauri);border:1.5px solid var(--kauri)}
+.back{background:none;border:0;color:var(--kauri);font:inherit;font-weight:600;cursor:pointer;margin-bottom:10px;padding:0}
+.est{background:var(--amberbg);border-left:4px solid var(--amber);padding:10px 12px;border-radius:8px;font-size:13px;margin-top:12px}
+nav{display:flex;border-top:1px solid var(--line);background:#fff}
+nav button{flex:1;background:none;border:0;padding:10px 0 12px;font:inherit;font-size:12px;color:var(--muted);cursor:pointer}
+nav button.on{color:var(--kauri);font-weight:700;box-shadow:inset 0 3px 0 var(--kauri)}
+nav span{display:block;font-size:19px}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:22px 22px 0 0;padding:20px 18px 26px;box-shadow:0 -10px 30px rgba(0,0,0,.18);transform:translateY(110%);transition:transform .25s;z-index:5}
+.sheet.open{transform:none}
+.scrim{position:absolute;inset:0;background:rgba(10,20,18,.35);display:none;z-index:4}.scrim.open{display:block}
+input[type=range]{width:100%;accent-color:var(--kauri);margin:8px 0}
+.chart{width:100%;height:150px;margin-top:8px}
+details{margin-top:10px;font-size:14px}summary{font-weight:600;cursor:pointer}
+details p{color:var(--muted);margin-top:6px}
+.dot{width:34px;height:34px;border-radius:50%;background:var(--mint);display:grid;place-items:center;font-weight:700;color:var(--kauri);flex:none}
+.pill{font-size:12px;background:var(--mint);color:var(--kauri);padding:3px 9px;border-radius:99px;font-weight:600}
+.field{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font:inherit;margin-top:6px}
+.field:focus{outline:2px solid var(--kauri);border-color:var(--kauri)}
+.opt{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;margin-top:8px;cursor:pointer;font-size:15px}
+.opt:has(input:checked){border-color:var(--kauri);background:#eaf6f1}
+.opt input{accent-color:var(--kauri)}
+.err{color:#b3321f;font-size:13px;margin-top:6px;display:none}
+.toast{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:8px 14px;border-radius:99px;font-size:13px;opacity:0;transition:opacity .2s;z-index:9;pointer-events:none}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+<div class="toast" id="toast"></div>
+<div class="screens">
+
+<!-- HOME -->
+<section class="screen on" id="home">
+  <h1>Good evening, Jordan</h1>
+  <div class="total">$35,748.05</div>
+  <div class="sub">Total across 2 accounts · sample data</div>
+  <button class="card" onclick="go('accounts')">
+    <div class="row"><span class="name">BNZ Everyday</span><span class="amt">$2,418.60</span></div>
+    <div class="sub">Updated 6:12 pm</div>
+  </button>
+  <button class="card" onclick="go('kiwi')">
+    <div class="row"><span class="name">KiwiSaver – Balanced</span><span class="amt">$33,329.45</span></div>
+    <div class="up">▲ $730.00 (2.2%) this month</div>
+  </button>
+  <h2>Recent changes</h2>
+  <div class="card static">
+    <div class="row"><div class="row"><span class="dot">+</span><div><div class="name">Pay received</div><div class="sub">Thursday · BNZ Everyday</div></div></div><span class="up">+$1,386.40</span></div>
+  </div>
+  <div class="card static">
+    <div class="row"><div class="row"><span class="dot">−</span><div><div class="name">Pak’nSave</div><div class="sub">Wednesday · BNZ Everyday</div></div></div><span class="amt">−$84.15</span></div>
+  </div>
+  <button class="btn alt" onclick="go('projection')">See where my KiwiSaver could be in 2029</button>
+</section>
+
+<!-- ACCOUNTS -->
+<section class="screen" id="accounts">
+  <h1>Accounts</h1>
+  <div class="card static"><div class="row"><span class="name">BNZ Everyday</span><span class="pill">Connected</span></div><div class="sub">Balance $2,418.60</div></div>
+  <div class="card static"><div class="row"><span class="name">KiwiSaver – Balanced</span><span class="pill">Connected</span></div><div class="sub">Balance $33,329.45</div></div>
+  <div id="extra"></div>
+  <div class="card static"><div class="row"><span class="name">Add another provider</span></div><div class="sub">Link a bank or investment platform. Your money stays where it is.</div></div>
+  <button class="btn" onclick="openSheet('link')">Link an account</button>
+</section>
+
+<!-- KIWISAVER -->
+<section class="screen" id="kiwi">
+  <button class="back" onclick="go('home')">‹ Back</button>
+  <h1>KiwiSaver – Balanced</h1>
+  <div class="total">$33,329.45</div>
+  <div class="card static">
+    <div class="sub">This month</div>
+    <div class="row"><span class="amt" style="font-size:22px">+$730.00</span><span class="up">▲ 2.2%</span></div>
+  </div>
+  <h2>What your fund holds</h2>
+  <div class="card static">
+    <button class="term" onclick="openSheet('term')">Balanced fund allocation</button>
+    <div class="sub" style="margin-top:4px">Tap the underlined term for a plain-English explanation</div>
+    <div class="bar"><i class="g" style="width:60%"></i><i class="f" style="width:25%"></i><i class="c" style="width:15%"></i></div>
+    <div class="legend"><span><b class="g"></b>Growth 60%</span><span><b class="f"></b>Fixed interest 25%</span><span><b class="c"></b>Cash 15%</span></div>
+    <div class="sub" style="margin-top:10px">Relative risk: medium</div>
+  </div>
+  <button class="btn" onclick="go('projection')">View growth estimate</button>
+  <button class="btn alt" onclick="toast('Opens your KiwiSaver provider’s app')">Contribute more</button>
+</section>
+
+<!-- PROJECTION -->
+<section class="screen" id="projection">
+  <button class="back" onclick="go('kiwi')">‹ Back</button>
+  <h1>Growth estimate</h1>
+  <div class="sub">KiwiSaver – Balanced, by 2029</div>
+  <div class="total" id="fv">$54,120</div>
+  <svg class="chart" id="chart" viewBox="0 0 340 150" preserveAspectRatio="none"></svg>
+  <div class="row sub"><span>2026</span><span>2027</span><span>2028</span><span>2029</span></div>
+  <div class="card static">
+    <div class="row"><span class="name">Monthly contribution</span><span class="amt" id="cv">$400</span></div>
+    <input type="range" id="contrib" min="0" max="800" step="25" value="400" aria-label="Monthly contribution">
+  </div>
+  <div class="est"><b>This is an estimate, not a promise.</b> It assumes a 5% yearly return, which can be higher or lower. It is not financial advice.</div>
+</section>
+
+<!-- SETTINGS -->
+<section class="screen" id="settings">
+  <h1>Settings</h1>
+  <h2 style="margin-top:6px">Why we ask for things</h2>
+  <details><summary>Why do you need my bank login?</summary><p>So Clearview can read your balance. We can’t move money or make payments.</p></details>
+  <details><summary>Why do you need my IRD number?</summary><p>Your KiwiSaver provider uses it to report your contributions. We ask once, and show this reason before you type it.</p></details>
+  <details><summary>Are there any extra steps or fees?</summary><p>We show any extra forms or fees before you start an action, not partway through.</p></details>
+  <button class="btn alt" onclick="toast('Signed out (prototype)')">Sign out</button>
+</section>
+
+</div>
+
+<div class="scrim" id="scrim" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet-term">
+  <h2 style="margin-top:0">Balanced fund allocation</h2>
+  <p>Your KiwiSaver money is split between three types of investment. In a balanced fund that’s mostly shares (growth), with some bonds (fixed interest) and cash to smooth out the ups and downs.</p>
+  <div class="est">General information only, not financial advice.</div>
+  <button class="btn" onclick="closeSheet()">Got it</button>
+</div>
+<div class="sheet" id="sheet-link">
+  <h2 style="margin-top:0">Before you link an account</h2>
+  <p>We’ll ask you to sign in with your provider. Clearview can see balances and transactions only. It can’t move money. It takes about 2 minutes and there’s no fee.</p>
+  <div class="sub" style="margin-top:10px">Choose a provider</div>
+  <label class="opt"><input type="radio" name="prov" value="Sharesies" checked> Sharesies</label>
+  <label class="opt"><input type="radio" name="prov" value="ASB Savings"> ASB Savings</label>
+  <label class="opt"><input type="radio" name="prov" value="Kernel Wealth"> Kernel Wealth</label>
+  <label class="sub" for="nick" style="display:block;margin-top:12px">Nickname for this account</label>
+  <input class="field" id="nick" type="text" maxlength="24" placeholder="e.g. Rainy day fund">
+  <div class="err" id="nickerr">Enter a nickname so you can tell your accounts apart.</div>
+  <button class="btn" onclick="linkAccount()">Continue</button>
+  <button class="btn alt" onclick="closeSheet()">Not now</button>
+</div>
+
+<nav>
+  <button class="on" data-nav="home" onclick="go('home')"><span>⌂</span>Home</button>
+  <button data-nav="accounts" onclick="go('accounts')"><span>▤</span>Accounts</button>
+  <button data-nav="projection" onclick="go('projection')"><span>↗</span>Insights</button>
+  <button data-nav="settings" onclick="go('settings')"><span>⚙</span>Settings</button>
+</nav>
+</div>
+
+<script>
+const navOf={home:'home',accounts:'accounts',kiwi:'home',projection:'projection',settings:'settings'};
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.nav===navOf[id]));
+  document.querySelector('.screens').scrollTop=0;closeSheet();
+  if(id==='projection')calc();
+}
+function openSheet(n){document.getElementById('scrim').classList.add('open');document.getElementById('sheet-'+n).classList.add('open')}
+function closeSheet(){document.getElementById('scrim').classList.remove('open');document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('open'))}
+function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('on');setTimeout(()=>e.classList.remove('on'),2200)}
+function linkAccount(){
+  const nick=document.getElementById('nick'),prov=document.querySelector('input[name=prov]:checked').value,err=document.getElementById('nickerr');
+  if(!nick.value.trim()){err.style.display='block';nick.focus();return}
+  err.style.display='none';
+  const d=document.createElement('div');d.className='card static';
+  const esc=t=>t.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  d.innerHTML='<div class="row"><span class="name">'+esc(nick.value.trim())+'</span><span class="pill">Connected</span></div><div class="sub">'+esc(prov)+' · balance syncing (sample)</div>';
+  document.getElementById('extra').appendChild(d);
+  nick.value='';closeSheet();toast('Account linked (sample data)');
+}
+function calc(){
+  const c=+document.getElementById('contrib').value,r=0.05/12;let v=33329.45;const pts=[v];
+  for(let m=1;m<=36;m++){v=v*(1+r)+c;if(m%12===0)pts.push(v)}
+  document.getElementById('cv').textContent='$'+c;
+  document.getElementById('fv').textContent='$'+Math.round(v).toLocaleString('en-NZ');
+  const max=Math.max(...pts)*1.05,min=pts[0]*0.9;
+  const xy=pts.map((p,i)=>[10+i*(320/3),140-(p-min)/(max-min)*125]);
+  const d=xy.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  document.getElementById('chart').innerHTML='<path d="'+d+'" fill="none" stroke="#0f3d3a" stroke-width="3" stroke-dasharray="7 6"/>'+xy.map(p=>'<circle cx="'+p[0]+'" cy="'+p[1]+'" r="5" fill="#0f3d3a"/>').join('');
+}
+document.getElementById('contrib').addEventListener('input',calc);calc();
+</script>
+</body>
+</html>
